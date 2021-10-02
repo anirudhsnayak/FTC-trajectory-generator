@@ -1,3 +1,7 @@
+
+import com.acmerobotics.roadrunner.trajectory.Trajectory
+import continuousPathConstructor.Menu
+import continuousPathConstructor.Menu.Companion.continuousConstructor
 import javafx.animation.KeyFrame
 import javafx.animation.Timeline
 import javafx.application.Application
@@ -21,16 +25,19 @@ class App : Application() {
     val endRect = Rectangle(100.0, 100.0, 10.0, 10.0)
 
     var startTime = Double.NaN
-    val trajectories = TrajectoryGen.createTrajectory()
-
+    lateinit var trajectories : ArrayList<Trajectory>
     lateinit var fieldImage: Image
+
+    lateinit var menu : Menu;
+
     lateinit var stage: Stage
 
-
     var activeTrajectoryIndex = 0
-    val trajectoryDurations = trajectories.map { it.duration() }
-    val duration = trajectoryDurations.sum()
-    val numberOfTrajectories = trajectories.size
+    lateinit var trajectoryDurations : List<Double>
+    var duration = 0.0
+    var numberOfTrajectories = 0
+
+    var trajectoryInitialized = false
 
     companion object {
         var WIDTH = 0.0
@@ -64,10 +71,22 @@ class App : Application() {
         stage.title = "PathVisualizer"
         stage.isResizable = false
 
-        println("duration $duration")
+        GraphicsUtil.fieldGroup = root;
+
+        menu = Menu(this)
+        menu.start()
 
         stage.show()
         t1.play()
+    }
+
+    fun generateTrajectory(){
+        trajectories = TrajectoryGen.createTrajectory()
+        trajectoryDurations = trajectories.map { it.duration() }
+        duration = trajectoryDurations.sum()
+        numberOfTrajectories = trajectories.size
+        println("duration $duration")
+        trajectoryInitialized = true
     }
 
     fun run(gc: GraphicsContext) {
@@ -77,6 +96,8 @@ class App : Application() {
         GraphicsUtil.gc = gc
         gc.drawImage(fieldImage, 0.0, 0.0)
 
+        continuousConstructor.drawAll()
+
         gc.lineWidth = GraphicsUtil.LINE_THICKNESS
 
         gc.globalAlpha = 0.5
@@ -84,40 +105,41 @@ class App : Application() {
         TrajectoryGen.drawOffbounds()
         gc.globalAlpha = 1.0
 
-        val trajectory = trajectories[activeTrajectoryIndex]
+        if (trajectoryInitialized) {
 
-        val prevDurations: Double = {
+            val trajectory = trajectories[activeTrajectoryIndex]
+
             var x = 0.0
             for (i in 0 until activeTrajectoryIndex)
                 x += trajectoryDurations[i]
-            x
-        }()
+            val prevDurations: Double = x
 
-        val time = Clock.seconds
-        val profileTime = time - startTime - prevDurations
-        val duration = trajectoryDurations[activeTrajectoryIndex]
+            val time = Clock.seconds
+            val profileTime = time - startTime - prevDurations
+            val duration = trajectoryDurations[activeTrajectoryIndex]
 
-        val start = trajectories.first().start()
-        val end = trajectories.last().end()
-        val current = trajectory[profileTime]
+            val start = trajectories.first().start()
+            val end = trajectories.last().end()
+            val current = trajectory[profileTime]
 
-        if (profileTime >= duration) {
-            activeTrajectoryIndex++
-            if(activeTrajectoryIndex >= numberOfTrajectories) {
-                activeTrajectoryIndex = 0
-                startTime = time
+            if (profileTime >= duration) {
+                activeTrajectoryIndex++
+                if (activeTrajectoryIndex >= numberOfTrajectories) {
+                    activeTrajectoryIndex = 0
+                    startTime = time
+                }
             }
+
+            trajectories.forEach { GraphicsUtil.drawSampledPath(it.path) }
+
+            GraphicsUtil.updateRobotRect(startRect, start, GraphicsUtil.END_BOX_COLOR, 0.5)
+            GraphicsUtil.updateRobotRect(endRect, end, GraphicsUtil.END_BOX_COLOR, 0.5)
+
+            GraphicsUtil.updateRobotRect(robotRect, current, GraphicsUtil.ROBOT_COLOR, 0.75)
+            GraphicsUtil.drawRobotVector(current)
+
+            stage.title = "Profile duration : ${"%.2f".format(duration)} - time in profile ${"%.2f".format(profileTime)}"
         }
-
-        trajectories.forEach{GraphicsUtil.drawSampledPath(it.path)}
-
-        GraphicsUtil.updateRobotRect(startRect, start, GraphicsUtil.END_BOX_COLOR, 0.5)
-        GraphicsUtil.updateRobotRect(endRect, end, GraphicsUtil.END_BOX_COLOR, 0.5)
-
-        GraphicsUtil.updateRobotRect(robotRect, current, GraphicsUtil.ROBOT_COLOR, 0.75)
-        GraphicsUtil.drawRobotVector(current)
-
-        stage.title = "Profile duration : ${"%.2f".format(duration)} - time in profile ${"%.2f".format(profileTime)}"
     }
 }
 

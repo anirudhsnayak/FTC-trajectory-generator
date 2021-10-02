@@ -1,5 +1,5 @@
 object Clock {
-    val milliseconds: Long
+    private val milliseconds: Long
         get() = System.currentTimeMillis()
 
     val nanoseconds: Long

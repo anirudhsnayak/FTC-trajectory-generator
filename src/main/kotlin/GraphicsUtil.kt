@@ -1,10 +1,15 @@
 import com.acmerobotics.roadrunner.geometry.Pose2d
 import com.acmerobotics.roadrunner.geometry.Vector2d
 import com.acmerobotics.roadrunner.path.Path
+import continuousPathConstructor.getVector2d
+import javafx.scene.Group
 import javafx.scene.canvas.GraphicsContext
 
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
+import java.awt.geom.Line2D
+import java.awt.geom.Point2D
+import kotlin.math.ceil
 
 
 object GraphicsUtil {
@@ -23,14 +28,44 @@ object GraphicsUtil {
 
     lateinit var gc: GraphicsContext
 
+    lateinit var fieldGroup: Group
+
     fun setColor(color: Color) {
         gc.stroke = color
         gc.fill = color
     }
 
+    //    fun drawBarriers(windowLen: Double, grid: Array<Array<GridCell>>){
+//        setColor(Color.RED)
+//        gc.globalAlpha = 0.75
+//        for(row in grid){
+//            for(cell in row){
+//                if (!cell.isWalkable){
+//                    val rect = Rectangle()
+//                    rect.height = windowLen / GridPathConstructor.resolution
+//                    rect.width = rect.height
+//                    rect.x = -windowLen * (2.5-row.indexOf(cell).toDouble())/ GridPathConstructor.resolution
+//                    rect.y = -windowLen * (2.5-grid.indexOf(row).toDouble())/ GridPathConstructor.resolution
+//                    fieldGroup.children.add(rect)
+//                }
+//            }
+//        }
+//    }
+    fun drawLines(lines: ArrayList<Line2D>, color: Color){
+        setColor(color)
+        for(line in lines){
+            strokeLine(Vector2d(line.x1, line.y1), Vector2d(line.x2, line.y2))
+        }
+    }
+    fun drawCircles(circles: ArrayList<Pair<Point2D, Double>>, color: Color){
+        setColor(color)
+        for(circle in circles){
+            strokeCircle(getVector2d(circle.first), circle.second)
+        }
+    }
     fun drawSampledPath(path: Path) {
         setColor(PATH_COLOR)
-        val samples = Math.ceil(path.length() / DEFUALT_RESOLUTION).toInt()
+        val samples = ceil(path.length() / DEFUALT_RESOLUTION).toInt()
         val points = Array(samples) { Vector2d() }
         val dx = path.length() / (samples - 1).toDouble()
         for (i in 0 until samples) {
@@ -45,7 +80,11 @@ object GraphicsUtil {
         val pixels = points.map { it.toPixel }
         gc.strokePolyline(pixels.map { it.x }.toDoubleArray(), pixels.map { it.y }.toDoubleArray(), points.size)
     }
-
+    fun strokeCircle(p: Vector2d, r: Double){
+        val pixDiff = Vector2d(r*pixelsPerInch, r*pixelsPerInch)
+        val pix = p.toPixel-pixDiff
+        gc.strokeOval(pix.x, pix.y, 2.0*pixDiff.x, 2.0*pixDiff.y)
+    }
     fun strokeLine(p1: Vector2d, p2: Vector2d) {
         val pix1 = p1.toPixel
         val pix2 = p2.toPixel
