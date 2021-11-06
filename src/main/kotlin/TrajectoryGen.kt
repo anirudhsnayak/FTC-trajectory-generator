@@ -15,6 +15,8 @@ import kotlin.math.PI
 
 
 object TrajectoryGen {
+    private const val usingComputer = false
+
     private const val RedAlliance = false
 
     private val FP = if (RedAlliance) {-1} else {1} //Field Parity
@@ -31,6 +33,13 @@ object TrajectoryGen {
     val combinedConstraints = MecanumConstraints(driveConstraints, trackWidth)
 
     private val startPose = Pose2d(-5*sq/2 , FP*sq, (0.0).toRadians)
+
+    fun autoMax(): ArrayList<Trajectory> {
+        val trajectoryBuilder = TrajectoryBuilder(startPose, 0.0, driveConstraints)
+        val pose1 = Pose2d(-5*sq/2, -3*sq, (0.0).toRadians)
+        val list = ArrayList<Trajectory>()
+        return list
+    }
 
     fun createTrajectory(): ArrayList<Trajectory> {
         val list =  ArrayList<Trajectory>()
