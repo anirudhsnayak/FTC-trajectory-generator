@@ -132,7 +132,7 @@ object TrajectoryGen {
     }
 
     fun createTrajectory(): ArrayList<Trajectory> {
-        return autoMaxAlliance()
+        return autoMax()
     }
 
 //    fun createTrajectory(): ArrayList<Trajectory> {
